@@ -22,9 +22,9 @@ namespace api.Controllers
         {
             return Ok(new APIResponse<UserViewModel>()
             {
-                statusCode = 200,
-                message = "Success, returning recent added user",
-                data = _userService.AddUser(userInput)
+                StatusCode = 200,
+                Message = "Success, returning recent added user",
+                Data = _userService.AddUser(userInput)
             });
         }
     }
