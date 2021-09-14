@@ -1,3 +1,4 @@
+using System.Linq;
 using api.Models.Data;
 using api.Models.Entities;
 
@@ -16,6 +17,14 @@ namespace api.Repositories
             User added = _context.users.Add(userInput).Entity;
             _context.SaveChanges();
             return added;
+        }
+
+        public User SelectUserByName(string username)
+        {
+            return _context.users
+                .Where(u => u.normalized_username.Equals(username))
+                .Select(u => new User(){username = u.username})
+                .FirstOrDefault();
         }
     }
 }
