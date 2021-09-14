@@ -27,5 +27,16 @@ namespace api.Controllers
                 Data = _userService.AddUser(userInput)
             });
         }
+
+        [HttpPost("Login")]
+        public ActionResult AuthenticateUser(UserInputModel userInput)
+        {
+            return Ok(new APIResponse<string>()
+            {
+                StatusCode = 200,
+                Message = "Success, deliverying your authentication token",
+                Data = _userService.AuthenticateUser(userInput)
+            });
+        }
     }
 }

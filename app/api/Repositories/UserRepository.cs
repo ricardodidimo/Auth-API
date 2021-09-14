@@ -23,7 +23,6 @@ namespace api.Repositories
         {
             return _context.users
                 .Where(u => u.normalized_username.Equals(username))
-                .Select(u => new User(){username = u.username})
                 .FirstOrDefault();
         }
     }

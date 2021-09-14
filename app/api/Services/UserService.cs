@@ -1,4 +1,7 @@
 using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using api.Models.Entities;
 using api.Models.Inputs;
 using api.Models.Responses;
@@ -6,21 +9,25 @@ using api.Models.Views;
 using api.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 
 namespace api.Services
 {
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
-
-        public UserService(IUserRepository userRepository)
+        private readonly IConfiguration _configuration;
+        private readonly PasswordHasher<User> passwordHasher = new();
+        public UserService(IUserRepository userRepository, IConfiguration configuration)
         {
             _userRepository = userRepository;
+            _configuration = configuration;
         }
         public UserViewModel AddUser(UserInputModel userInput)
         {
-            bool alreadyAdded = CheckIfUserAlreadyExists(userInput.username);
-            if(alreadyAdded)
+            bool alreadyAdded = CheckIfUserExistsUnderUsername(userInput.username);
+            if(alreadyAdded is true)
             {
                 throw new DomainException(400, new string[]{"Username already in use"});
             }
@@ -36,25 +43,62 @@ namespace api.Services
             };
         }
 
+        public string AuthenticateUser(UserInputModel userInput)
+        {
+            string normalizedUsernameInput = userInput.username.ToUpper();
+            User userExists = _userRepository.SelectUserByName(normalizedUsernameInput);
+            if(userExists is null)
+            {
+                throw new DomainException(404, new string[]{"User not found"});
+            }
+
+            PasswordVerificationResult samePassword = passwordHasher.VerifyHashedPassword(userExists, 
+                userExists.password, userInput.password);
+            
+            if(((int) samePassword) is not 1)
+            {
+                throw new DomainException(404, new string[]{"Credentials invalid"});
+            }
+
+            return CreateJWT(userExists);
+        }
         private User BuildFormattedUser(UserInputModel userInput)
         {
-            PasswordHasher<User> ph = new();
 
             User userToAdd = new User()
             {
                 username = userInput.username,
                 normalized_username = userInput.username.ToUpper()
             };
-            userToAdd.password = ph.HashPassword(userToAdd, userInput.password);
+
+            userToAdd.password = passwordHasher.HashPassword(userToAdd, userInput.password);
             
             return userToAdd;
         }
 
-        private bool CheckIfUserAlreadyExists(string username)
+        private bool CheckIfUserExistsUnderUsername(string username)
         {
             User foundUser = _userRepository.SelectUserByName(username.ToUpper());
             
             return foundUser is not null;
+        }
+
+        private string CreateJWT(User userLogged)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_configuration["JWTKey"]);
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new Claim[]
+                {
+                    new Claim(ClaimTypes.Name, userLogged.username),
+                    new Claim(ClaimTypes.NameIdentifier, userLogged.UserId.ToString())
+                }),
+                Expires = DateTime.UtcNow.AddHours(2),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+            SecurityToken token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
         }
     }
 }
