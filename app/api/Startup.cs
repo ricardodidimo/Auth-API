@@ -24,14 +24,12 @@ namespace api
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
             services.AddControllers();
             services.AddDbContext<AppDbContext>(config => config.UseNpgsql(Configuration["DbConn"]));
-            services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "api", Version = "v1" });
-            });
-
+            
+            services.AddSwaggerConfig();
+            services.AddAuthenticationConfig(Configuration);
+            
             services.AddAppServicesLayer();
             services.AddAppRepositoriesLayer();
         }
@@ -48,7 +46,8 @@ namespace api
             app.UseHttpsRedirection();
 
             app.UseRouting();
-
+            
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
