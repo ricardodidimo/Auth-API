@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -7,6 +8,7 @@ using api.Models.Inputs;
 using api.Models.Responses;
 using api.Models.Views;
 using api.Repositories;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -18,12 +20,37 @@ namespace api.Services
     {
         private readonly IUserRepository _userRepository;
         private readonly IConfiguration _configuration;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly PasswordHasher<User> passwordHasher = new();
-        public UserService(IUserRepository userRepository, IConfiguration configuration)
+
+
+        public UserService(IUserRepository userRepository, 
+            IConfiguration configuration,
+            IHttpContextAccessor httpContextAccessor)
         {
             _userRepository = userRepository;
             _configuration = configuration;
+            _httpContextAccessor = httpContextAccessor;
         }
+
+
+        public List<UserViewModel> GetUsers()
+        {
+            List<User> retrivedUsers = _userRepository.SelectUsers();
+            List<UserViewModel> users = new();
+
+            foreach (User user in retrivedUsers)
+            {
+                users.Add(new UserViewModel(){
+                    UserId = user.UserId,
+                    username = user.username
+                });
+            }
+
+            return users;
+        }
+
+
         public UserViewModel AddUser(UserInputModel userInput)
         {
             bool alreadyAdded = CheckIfUserExistsUnderUsername(userInput.username);
@@ -43,6 +70,7 @@ namespace api.Services
             };
         }
 
+
         public string AuthenticateUser(UserInputModel userInput)
         {
             string normalizedUsernameInput = userInput.username.ToUpper();
@@ -61,6 +89,27 @@ namespace api.Services
             }
 
             return CreateJWT(userExists);
+        }
+
+        public UserViewModel RemoveUser()
+        {
+            int currentUserId = Int32.Parse(_httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
+            User toRemove = _userRepository.SelectUserById(currentUserId);
+
+            if(toRemove is null)
+            {
+                throw new DomainException(404, new string[]{"User not found"});
+            }
+
+            _ = _userRepository.DeleteUser(toRemove);
+
+            return new UserViewModel()
+            {
+                UserId = toRemove.UserId,
+                username = toRemove.username
+            };
+        
         }
         private User BuildFormattedUser(UserInputModel userInput)
         {

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using api.Models.Data;
 using api.Models.Entities;
@@ -18,12 +19,32 @@ namespace api.Repositories
             _context.SaveChanges();
             return added;
         }
-
         public User SelectUserByName(string username)
         {
             return _context.users
                 .Where(u => u.normalized_username.Equals(username))
                 .FirstOrDefault();
+        }
+
+        public List<User> SelectUsers()
+        {
+            return _context.users.Select(u => new User(){
+                UserId = u.UserId,
+                username = u.username
+            }).ToList();
+        }  
+        
+        public User SelectUserById(int id)
+        {
+           return _context.users.Where(u => u.UserId == id).FirstOrDefault();
+        }
+
+        public User DeleteUser(User toDelete)
+        {
+            _context.Remove(toDelete);
+            _context.SaveChanges();
+
+            return toDelete;
         }
     }
 }
