@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using api.Extensions;
 using api.Models.Data;
 using api.Repositories;
 using api.Services;
@@ -38,8 +39,8 @@ namespace api
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "api", Version = "v1" });
             });
 
-            services.AddScoped<IUserService, UserService>();
-            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddAppServicesLayer();
+            services.AddAppRepositoriesLayer();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
