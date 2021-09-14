@@ -1,4 +1,6 @@
 using api.Models.Inputs;
+using api.Models.Responses;
+using api.Models.Views;
 using api.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,7 +20,12 @@ namespace api.Controllers
         [HttpPost("Register")]
         public ActionResult PostAUser(UserInputModel userInput)
         {
-           return Ok(_userService.AddUser(userInput));
+            return Ok(new APIResponse<UserViewModel>()
+            {
+                statusCode = 200,
+                message = "Success, returning recent added user",
+                data = _userService.AddUser(userInput)
+            });
         }
     }
 }
