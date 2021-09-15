@@ -52,20 +52,18 @@ namespace api.Services
 
         public UserViewModel AddUser(UserInputModel userInput)
         {
-            bool alreadyAdded = CheckIfUserExistsUnderUsername(userInput.username);
-            if(alreadyAdded is true)
+            User user = _userRepository.SelectUserByName(userInput.username.ToUpper());
+            if(user is not null)
             {
                 throw new DomainException(400, new string[]{"Username already in use"});
             }
 
-            User userToAdd = BuildFormattedUser(userInput);
-            User insertedUser;
-    
-            insertedUser = _userRepository.InsertUser(userToAdd);
+            user = BuildFormattedUser(userInput);
+            user = _userRepository.InsertUser(user);
 
             return new UserViewModel(){
-                UserId = insertedUser.UserId,
-                username = insertedUser.username
+                UserId = user.UserId,
+                username = user.username
             };
         }
 
@@ -90,6 +88,33 @@ namespace api.Services
             return CreateJWT(userExists);
         }
 
+    #nullable enable
+        public UserViewModel UpdateUser(string? username, string? password)
+        {
+            int currentUserId = Int32.Parse(_httpContextAccessor.HttpContext!.User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            
+            User userUpdate = _userRepository.SelectUserById(currentUserId);
+            if(userUpdate is null)
+            {
+                throw new DomainException(404, new string[]{"User not found"});
+            }
+           
+            userUpdate.username = username ?? userUpdate.username;
+            userUpdate.normalized_username = username?.ToUpper() ?? userUpdate.normalized_username;
+
+            if(password is not null)
+            {
+                userUpdate.password = passwordHasher.HashPassword(userUpdate, password);
+            }
+
+            userUpdate = _userRepository.UpdateUser(userUpdate);
+            return new UserViewModel(){
+                UserId = userUpdate.UserId,
+                username = userUpdate.username
+            };
+        }
+    #nullable disable
+    
         public UserViewModel RemoveUser()
         {
             int currentUserId = Int32.Parse(_httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value);
@@ -122,13 +147,6 @@ namespace api.Services
             userToAdd.password = passwordHasher.HashPassword(userToAdd, userInput.password);
             
             return userToAdd;
-        }
-
-        private bool CheckIfUserExistsUnderUsername(string username)
-        {
-            User foundUser = _userRepository.SelectUserByName(username.ToUpper());
-            
-            return foundUser is not null;
         }
 
         private string CreateJWT(User userLogged)

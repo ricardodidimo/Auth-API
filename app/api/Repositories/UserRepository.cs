@@ -39,6 +39,12 @@ namespace api.Repositories
            return _context.users.Where(u => u.UserId == id).FirstOrDefault();
         }
 
+        public User UpdateUser(User input)
+        {
+            User userUpdated = _context.Update(input).Entity;
+            _context.SaveChanges();
+            return userUpdated;
+        }
         public User DeleteUser(User toDelete)
         {
             _context.Remove(toDelete);

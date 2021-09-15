@@ -9,6 +9,7 @@ namespace api.Repositories
         User InsertUser(User userInput);
         User SelectUserByName(string username);
         User SelectUserById(int id);
+        User UpdateUser(User userInput);
         User DeleteUser(User toDelete);
     }
 }

@@ -9,7 +9,12 @@ namespace api.Services
         List<UserViewModel> GetUsers();
         UserViewModel AddUser(UserInputModel userInput);
         string AuthenticateUser(UserInputModel userInput);
-        public UserViewModel RemoveUser();
+
+        #nullable enable
+        UserViewModel UpdateUser(string? username, string? password);
+        #nullable disable
+
+        UserViewModel RemoveUser();
        
     }
 }

@@ -25,7 +25,7 @@ namespace api.Controllers
             return Ok(new APIResponse<List<UserViewModel>>()
             {
                 StatusCode = 200,
-                Message = "Success, returning registered users",
+                Message = "Success, returning all registered users",
                 Data = _userService.GetUsers()
             });
         }
@@ -36,7 +36,7 @@ namespace api.Controllers
             return Ok(new APIResponse<UserViewModel>()
             {
                 StatusCode = 201,
-                Message = "Success, returning recent added user",
+                Message = "Success, returning newly added user",
                 Data = _userService.AddUser(userInput)
             });
         }
@@ -47,8 +47,20 @@ namespace api.Controllers
             return Ok(new APIResponse<string>()
             {
                 StatusCode = 201,
-                Message = "Success, deliverying your authentication token",
+                Message = "Success, deliverying the authentication token created after identity confirmation",
                 Data = _userService.AuthenticateUser(userInput)
+            });
+        }
+
+        [HttpPut]
+        [Authorize]
+        public ActionResult PutUser(string newUsername = null, string newPassword = null)
+        {
+            return Ok(new APIResponse<UserViewModel>()
+            {
+                StatusCode = 200,
+                Message = "Success, returning recent updated user",
+                Data = _userService.UpdateUser(newUsername, newPassword)
             });
         }
 
@@ -59,7 +71,7 @@ namespace api.Controllers
             return Ok(new APIResponse<UserViewModel>()
             {
                 StatusCode = 200,
-                Message = "Success, user deleted",
+                Message = "Success, returning recent deleted user",
                 Data = _userService.RemoveUser()
             });
         }
