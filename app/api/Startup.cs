@@ -1,9 +1,11 @@
 using api.Extensions;
 using api.Middlewares;
 using api.Models.Data;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,14 +24,16 @@ namespace api
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers();
+            services.AddControllers().AddFluentValidation();
             services.AddDbContext<AppDbContext>(config => config.UseNpgsql(Configuration["DbConn"]));
             
             services.AddSwaggerConfig();
             services.AddAuthenticationConfig(Configuration);
+            services.Configure<ApiBehaviorOptions>(o => services.ModelBindingHandler(o));
             
             services.AddAppServicesLayer();
             services.AddAppRepositoriesLayer();
+            services.AddAppValidatorsLayer();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
         }
 

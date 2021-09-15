@@ -138,15 +138,15 @@ namespace api.Services
         private User BuildFormattedUser(UserInputModel userInput)
         {
 
-            User userToAdd = new User()
+            User formattedUser = new User()
             {
                 username = userInput.username,
                 normalized_username = userInput.username.ToUpper()
             };
 
-            userToAdd.password = passwordHasher.HashPassword(userToAdd, userInput.password);
+            formattedUser.password = passwordHasher.HashPassword(formattedUser, userInput.password);
             
-            return userToAdd;
+            return formattedUser;
         }
 
         private string CreateJWT(User userLogged)
