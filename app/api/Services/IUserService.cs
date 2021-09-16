@@ -7,6 +7,7 @@ namespace api.Services
     public interface IUserService
     {
         List<UserViewModel> GetUsers();
+        UserViewModel GetActualUser();
         UserViewModel AddUser(UserInputModel userInput);
         string AuthenticateUser(UserInputModel userInput);
 

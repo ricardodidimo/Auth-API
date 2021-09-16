@@ -1,6 +1,8 @@
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using api.Models.Inputs;
 using FluentValidation;
+using FluentValidation.Results;
 
 namespace api.Models.Validators
 {
@@ -9,21 +11,33 @@ namespace api.Models.Validators
         public UserInputModelValidator()
         {
             RuleFor(user => user.username)
-                .NotEmpty().WithMessage("username should not be left empty")
-                .NotNull().WithMessage("username input is missing")
                 .Custom((username, context) => {
-                   MatchCollection searchBackspaces = Regex.Matches(username, "\\s");
-                    if(searchBackspaces.Count > 0)
+                    var validator = new UserInputModelUsernameValidator();
+                    ValidationResult result = validator.Validate(username);
+
+                    if(result.IsValid is false)
                     {
-                        context.AddFailure("username must not contain blank spaces");
+                        foreach (ValidationFailure item in result.Errors)
+                        {
+                            context.AddFailure(item);
+                        }
                     }
-                })
-                .Length(2,25).WithMessage("username must have min. length of 2 and a max of 25 chars");
-            
+                });
+
             RuleFor(user => user.password)
-                .NotEmpty().WithMessage("password should not be left empty")
-                .NotNull().WithMessage("password input is missing")
-                .MinimumLength(6).WithMessage("password must have min. length of 6");
+                .Custom((password, context) => {
+                    var validator = new UserInputModelPasswordValidator();
+                    ValidationResult result = validator.Validate(password);
+
+                    if(result.IsValid is false)
+                    {
+                        foreach (ValidationFailure item in result.Errors)
+                        {
+                            context.AddFailure(item);
+                        }
+                    }
+                });
+
         }
     }
 }

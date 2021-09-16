@@ -1,17 +1,17 @@
 using System;
 using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
+using api.Helpers;
 using api.Models.Entities;
 using api.Models.Inputs;
 using api.Models.Responses;
+using api.Models.Validators;
 using api.Models.Views;
 using api.Repositories;
+using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
 
 namespace api.Services
 {
@@ -32,7 +32,6 @@ namespace api.Services
             _httpContextAccessor = httpContextAccessor;
         }
 
-
         public List<UserViewModel> GetUsers()
         {
             List<User> retrivedUsers = _userRepository.SelectUsers();
@@ -49,16 +48,37 @@ namespace api.Services
             return users;
         }
 
+        public UserViewModel GetActualUser()
+        {
+            int currentUserId = Int32.Parse(_httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
+            User actual = _userRepository.SelectUserById(currentUserId);
+            if(actual is null)
+            {
+                throw new DomainException(404, new string[]{"ID not accepted. Try again"});
+            }
+
+            return new UserViewModel(){
+                UserId = actual.UserId,
+                username = actual.username
+            };
+        }
 
         public UserViewModel AddUser(UserInputModel userInput)
         {
             User user = _userRepository.SelectUserByName(userInput.username.ToUpper());
             if(user is not null)
             {
-                throw new DomainException(400, new string[]{"Username already in use"});
+                throw new DomainException(400, new string[]{"username not accepted. Try again"});
             }
 
-            user = BuildFormattedUser(userInput);
+            user = new User()
+            {
+                username = userInput.username,
+                normalized_username = userInput.username.ToUpper(),
+                password = passwordHasher.HashPassword(user, userInput.password)
+            };
+
             user = _userRepository.InsertUser(user);
 
             return new UserViewModel(){
@@ -67,14 +87,13 @@ namespace api.Services
             };
         }
 
-
         public string AuthenticateUser(UserInputModel userInput)
         {
             string normalizedUsernameInput = userInput.username.ToUpper();
             User userExists = _userRepository.SelectUserByName(normalizedUsernameInput);
             if(userExists is null)
             {
-                throw new DomainException(404, new string[]{"User not found"});
+                throw new DomainException(400, new string[]{"Credentials invalid"});
             }
 
             PasswordVerificationResult samePassword = passwordHasher.VerifyHashedPassword(userExists, 
@@ -82,10 +101,10 @@ namespace api.Services
             
             if(((int) samePassword) is not 1)
             {
-                throw new DomainException(404, new string[]{"Credentials invalid"});
+                throw new DomainException(400, new string[]{"Credentials invalid"});
             }
 
-            return CreateJWT(userExists);
+            return JSONWebTokenManager.CreateJWT(userExists, _configuration);
         }
 
     #nullable enable
@@ -96,22 +115,53 @@ namespace api.Services
             User userUpdate = _userRepository.SelectUserById(currentUserId);
             if(userUpdate is null)
             {
-                throw new DomainException(404, new string[]{"User not found"});
+                throw new DomainException(400, new string[]{"ID not accepted. Repeat authentication"});
             }
-           
-            userUpdate.username = username ?? userUpdate.username;
-            userUpdate.normalized_username = username?.ToUpper() ?? userUpdate.normalized_username;
+
+            if(username is not null)
+            {
+                var validator = new UserInputModelUsernameValidator();
+                
+                if(IsValidInput<string>(validator, username) is true)
+                {
+                    userUpdate.username = username;
+                    userUpdate.normalized_username = username.ToUpper();
+                }
+            }
 
             if(password is not null)
             {
-                userUpdate.password = passwordHasher.HashPassword(userUpdate, password);
-            }
+                var validator = new UserInputModelPasswordValidator();
 
+                if(IsValidInput<string>(validator, password) is true)
+                {
+                    userUpdate.password = passwordHasher.HashPassword(userUpdate, password);
+                }
+            }
+            
             userUpdate = _userRepository.UpdateUser(userUpdate);
             return new UserViewModel(){
                 UserId = userUpdate.UserId,
                 username = userUpdate.username
             };
+        }
+
+        private bool IsValidInput<T>(AbstractValidator<T> validator, T input)
+        {
+            var result = validator.Validate(input);
+
+            if(result.IsValid is false)
+            {
+                List<string> errors = new();
+
+                foreach (var item in result.Errors)
+                {
+                    errors.Add(item.ErrorMessage);
+                }
+                throw new DomainException(400, errors);
+            }
+
+            return true;
         }
     #nullable disable
     
@@ -123,7 +173,7 @@ namespace api.Services
 
             if(toRemove is null)
             {
-                throw new DomainException(404, new string[]{"User not found"});
+                throw new DomainException(400, new string[]{"ID not accepted. Try again"});
             }
 
             _ = _userRepository.DeleteUser(toRemove);
@@ -135,36 +185,7 @@ namespace api.Services
             };
         
         }
-        private User BuildFormattedUser(UserInputModel userInput)
-        {
 
-            User formattedUser = new User()
-            {
-                username = userInput.username,
-                normalized_username = userInput.username.ToUpper()
-            };
 
-            formattedUser.password = passwordHasher.HashPassword(formattedUser, userInput.password);
-            
-            return formattedUser;
-        }
-
-        private string CreateJWT(User userLogged)
-        {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_configuration["JWTKey"]);
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(new Claim[]
-                {
-                    new Claim(ClaimTypes.Name, userLogged.username),
-                    new Claim(ClaimTypes.NameIdentifier, userLogged.UserId.ToString())
-                }),
-                Expires = DateTime.UtcNow.AddHours(2),
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-            };
-            SecurityToken token = tokenHandler.CreateToken(tokenDescriptor);
-            return tokenHandler.WriteToken(token);
-        }
     }
 }
