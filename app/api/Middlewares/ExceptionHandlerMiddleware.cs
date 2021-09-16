@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using api.Models.Responses;
 using Microsoft.AspNetCore.Http;
@@ -33,7 +34,7 @@ namespace api.Middlewares
                 {
                     DomainException handledException = ((DomainException) ex);
                     context.Response.StatusCode = handledException.StatusCode;
-                    await context.Response.WriteAsJsonAsync(new APIResponse<string[]>(){
+                    await context.Response.WriteAsJsonAsync(new APIResponse<IEnumerable<string>>(){
                         StatusCode = handledException.StatusCode,
                         Message = "Request Failure",
                         Data = handledException.ErrorMessages
