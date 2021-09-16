@@ -10,11 +10,11 @@ namespace api.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class UserController : ControllerBase
+    public class UsersController : ControllerBase
     {
         private readonly IUserService _userService;
 
-        public UserController(IUserService userService)
+        public UsersController(IUserService userService)
         {
             _userService = userService;
         }
@@ -25,11 +25,22 @@ namespace api.Controllers
             return Ok(new APIResponse<List<UserViewModel>>()
             {
                 StatusCode = 200,
-                Message = "Success, returning all registered users",
+                Message = "Success, returning registered users",
                 Data = _userService.GetUsers()
             });
         }
 
+        [HttpGet("whoiam")]
+        [Authorize]
+        public ActionResult GetActualUser()
+        {
+            return Ok(new APIResponse<UserViewModel>()
+            {
+                StatusCode = 200,
+                Message = "Success, returning authenticated user",
+                Data = _userService.GetActualUser()
+            });
+        }
         [HttpPost("Register")]
         public ActionResult PostAUser(UserInputModel userInput)
         {
@@ -59,7 +70,7 @@ namespace api.Controllers
             return Ok(new APIResponse<UserViewModel>()
             {
                 StatusCode = 200,
-                Message = "Success, returning recent updated user",
+                Message = "Success, returning updated user",
                 Data = _userService.UpdateUser(newUsername, newPassword)
             });
         }
@@ -71,7 +82,7 @@ namespace api.Controllers
             return Ok(new APIResponse<UserViewModel>()
             {
                 StatusCode = 200,
-                Message = "Success, returning recent deleted user",
+                Message = "Success, returning deleted user",
                 Data = _userService.RemoveUser()
             });
         }
