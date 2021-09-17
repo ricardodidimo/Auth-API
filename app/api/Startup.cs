@@ -43,10 +43,12 @@ namespace api
 
             app.UseSwagger();
             app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "api v1"));
-            
+         
             app.UseMiddleware<ExceptionHandlerAPIMiddleware>();
+            app.UseMiddleware<SecurityHeadersMiddleware>();
 
             app.UseHttpsRedirection();
+            app.UseHsts();
 
             app.UseRouting();
 
