@@ -21,7 +21,8 @@ namespace api.Models.Validators
                         context.AddFailure("password must contain alphanumeric and symbol chars");
                     }
                 })
-                .MinimumLength(8).WithMessage("password must have min. length of 8");
+                .MinimumLength(8).WithMessage("password must have min. length of 8")
+                .MaximumLength(128).WithMessage("password must not exceed length of 128 chars");
         }
     }
 }
