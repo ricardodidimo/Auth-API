@@ -41,13 +41,13 @@ namespace api.Repositories
 
         public User UpdateUser(User input)
         {
-            User userUpdated = _context.Update(input).Entity;
+            User userUpdated = _context.users.Update(input).Entity;
             _context.SaveChanges();
             return userUpdated;
         }
         public User DeleteUser(User toDelete)
         {
-            _context.Remove(toDelete);
+            _context.users.Remove(toDelete);
             _context.SaveChanges();
 
             return toDelete;
