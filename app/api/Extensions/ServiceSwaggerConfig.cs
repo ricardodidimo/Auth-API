@@ -7,6 +7,7 @@ namespace api.Extensions
 {
     public static class ServiceSwaggerConfig
     {
+        /// <summary>Extension for configuring the swagger interface as a way for the user to authenticate, attaching the token to subsequent requests</summary>
         public static IServiceCollection AddSwaggerConfig(this IServiceCollection services)
         {
             services.AddSwaggerGen(c =>

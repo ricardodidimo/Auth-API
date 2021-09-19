@@ -4,6 +4,7 @@ using System.Collections.Generic;
 
 namespace api.Models.Responses
 {
+    /// <summary>Default exception for expected bad user behavior</summary>
     public class DomainException : Exception
     {
         public int StatusCode { get; set; }

@@ -1,5 +1,6 @@
 namespace api.Models.Responses
 {
+    /// <summary>Output for the API endpoints, enforcing a pattern.</summary>
     public class APIResponse<T>
     {
         public int StatusCode { get; set; }

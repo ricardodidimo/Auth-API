@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
+using System.Threading.Tasks;
 using api.Helpers;
 using api.Models.Entities;
 using api.Models.Inputs;
@@ -9,6 +10,7 @@ using api.Models.Validators;
 using api.Models.Views;
 using api.Repositories;
 using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
@@ -20,7 +22,7 @@ namespace api.Services
         private readonly IUserRepository _userRepository;
         private readonly IConfiguration _configuration;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly PasswordHasher<User> passwordHasher = new();
+        private readonly PasswordHasher<User> _passwordHasher = new();
 
 
         public UserService(IUserRepository userRepository, 
@@ -32,9 +34,9 @@ namespace api.Services
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public List<UserViewModel> GetUsers()
+        public async Task<List<UserViewModel>> GetUsersAsync()
         {
-            List<User> retrivedUsers = _userRepository.SelectUsers();
+            List<User> retrivedUsers = await _userRepository.SelectUsersAsync();
             List<UserViewModel> users = new();
 
             foreach (User user in retrivedUsers)
@@ -48,11 +50,11 @@ namespace api.Services
             return users;
         }
 
-        public UserViewModel GetActualUser()
+        public async Task<UserViewModel> GetActualUserAsync()
         {
             int currentUserId = Int32.Parse(_httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
-            User actual = _userRepository.SelectUserById(currentUserId);
+            User actual = await _userRepository.SelectUserByIdAsync(currentUserId);
             if(actual is null)
             {
                 throw new DomainException(404, new string[]{"ID not accepted. Try again"});
@@ -64,9 +66,9 @@ namespace api.Services
             };
         }
 
-        public UserViewModel AddUser(UserInputModel userInput)
+        public async Task<UserViewModel> AddUserAsync(UserInputModel userInput)
         {
-            User user = _userRepository.SelectUserByName(userInput.username.ToUpper());
+            User user = await _userRepository.SelectUserByNameAsync(userInput.username.ToUpper());
             if(user is not null)
             {
                 throw new DomainException(400, new string[]{"username not accepted. Try again"});
@@ -76,10 +78,10 @@ namespace api.Services
             {
                 username = userInput.username,
                 normalized_username = userInput.username.ToUpper(),
-                password = passwordHasher.HashPassword(user, userInput.password)
+                password = _passwordHasher.HashPassword(user, userInput.password)
             };
 
-            user = _userRepository.InsertUser(user);
+            user = await _userRepository.InsertUserAsync(user);
 
             return new UserViewModel(){
                 UserId = user.UserId,
@@ -87,32 +89,32 @@ namespace api.Services
             };
         }
 
-        public string AuthenticateUser(UserInputModel userInput)
+        public async Task<string> AuthenticateUserAsync(UserInputModel userInput)
         {
             string normalizedUsernameInput = userInput.username.ToUpper();
-            User userExists = _userRepository.SelectUserByName(normalizedUsernameInput);
-            if(userExists is null)
+            User userToAuth = await _userRepository.SelectUserByNameAsync(normalizedUsernameInput);
+            if(userToAuth is null)
             {
                 throw new DomainException(400, new string[]{"Credentials invalid"});
             }
 
-            PasswordVerificationResult samePassword = passwordHasher.VerifyHashedPassword(userExists, 
-                userExists.password, userInput.password);
+            PasswordVerificationResult samePassword = _passwordHasher.VerifyHashedPassword(userToAuth, 
+                userToAuth.password, userInput.password);
             
             if(((int) samePassword) is not 1)
             {
                 throw new DomainException(400, new string[]{"Credentials invalid"});
             }
 
-            return JSONWebTokenManager.CreateJWT(userExists, _configuration);
+            return JSONWebTokenManager.CreateJWT(userToAuth, _configuration);
         }
 
     #nullable enable
-        public UserViewModel UpdateUser(string? username, string? password)
+        public async Task<UserViewModel> UpdateUserAsync(string? username, string? password)
         {
             int currentUserId = Int32.Parse(_httpContextAccessor.HttpContext!.User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
             
-            User userUpdate = _userRepository.SelectUserById(currentUserId);
+            User userUpdate = await _userRepository.SelectUserByIdAsync(currentUserId);
             if(userUpdate is null)
             {
                 throw new DomainException(400, new string[]{"ID not accepted. Repeat authentication"});
@@ -135,11 +137,11 @@ namespace api.Services
 
                 if(IsValidInput<string>(validator, password) is true)
                 {
-                    userUpdate.password = passwordHasher.HashPassword(userUpdate, password);
+                    userUpdate.password = _passwordHasher.HashPassword(userUpdate, password);
                 }
             }
             
-            userUpdate = _userRepository.UpdateUser(userUpdate);
+            userUpdate = await _userRepository.UpdateUserAsync(userUpdate);
             return new UserViewModel(){
                 UserId = userUpdate.UserId,
                 username = userUpdate.username
@@ -148,13 +150,13 @@ namespace api.Services
 
         private bool IsValidInput<T>(AbstractValidator<T> validator, T input)
         {
-            var result = validator.Validate(input);
+            ValidationResult result = validator.Validate(input);
 
             if(result.IsValid is false)
             {
                 List<string> errors = new();
 
-                foreach (var item in result.Errors)
+                foreach (ValidationFailure item in result.Errors)
                 {
                     errors.Add(item.ErrorMessage);
                 }
@@ -165,23 +167,23 @@ namespace api.Services
         }
     #nullable disable
     
-        public UserViewModel RemoveUser()
+        public async Task<UserViewModel> RemoveUserAsync()
         {
             int currentUserId = Int32.Parse(_httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
-            User toRemove = _userRepository.SelectUserById(currentUserId);
+            User userRemove = await _userRepository.SelectUserByIdAsync(currentUserId);
 
-            if(toRemove is null)
+            if(userRemove is null)
             {
                 throw new DomainException(400, new string[]{"ID not accepted. Try again"});
             }
 
-            _ = _userRepository.DeleteUser(toRemove);
+            _ = _userRepository.DeleteUserAsync(userRemove);
 
             return new UserViewModel()
             {
-                UserId = toRemove.UserId,
-                username = toRemove.username
+                UserId = userRemove.UserId,
+                username = userRemove.username
             };
         
         }
