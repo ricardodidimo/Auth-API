@@ -1,5 +1,4 @@
 using System.Text.RegularExpressions;
-using api.Models.Inputs;
 using FluentValidation;
 
 namespace api.Models.Validators

@@ -10,6 +10,10 @@ namespace api.Helpers
 {
     public static class JSONWebTokenManager
     {
+        /// <summary>Creates the json web token that should be used for authentication.</summary>
+        /// <param name="userLogged">Representation of the authenticated user.</param>
+        /// <param name="userLogged">IConfiguration injection for reading 'generation key'.</param>
+        /// <returns>The token which should be sent within every request as identity proving.</returns>
         public static string CreateJWT(User userLogged, IConfiguration configuration)
         {
             var tokenHandler = new JwtSecurityTokenHandler();

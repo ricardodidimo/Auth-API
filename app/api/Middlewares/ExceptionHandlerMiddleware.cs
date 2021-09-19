@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Http;
 
 namespace api.Middlewares
 {
+    
+    /// <summary>Middleware responsable for catching and dealing with all the exceptions raised, giving proper API response to expected and unexpected errors.</summary>
     public class ExceptionHandlerAPIMiddleware
     {
             private readonly RequestDelegate _next;

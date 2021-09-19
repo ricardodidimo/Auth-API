@@ -8,6 +8,7 @@ namespace api.Extensions
 {
     public static class ServiceCollectionAuthenticationExtension
     {
+        /// <summary>Extension for informing the application the authentication schema, configuring the interpretation of the json web token.</summary>
         public static IServiceCollection AddAuthenticationConfig(this IServiceCollection services, IConfiguration configuration)
         {
             byte[] key = Encoding.ASCII.GetBytes(configuration["JWTKey"]);
