@@ -18,11 +18,10 @@ namespace tests
         private Mock<IHttpContextAccessor> httpContext = new Mock<IHttpContextAccessor>();
         private IConfiguration configuration = new ConfigurationBuilder()
             // Path for folder containing variables
-            .SetBasePath("C:\\Users\\Ricardo\\Desktop\\artful_api\\app\\tests")
+            .SetBasePath("")
             // File containing variables
-            .AddJsonFile("appsettings.Development.json")
+            .AddJsonFile("")
             .Build();
-
 
         [Fact]
         public async Task GetUsers_WhenCalled_ReturnsExpectedListOfUserViewModel()
