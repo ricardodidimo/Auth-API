@@ -10,6 +10,7 @@ using api.Models.Validators;
 using api.Models.Views;
 using api.Repositories;
 using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
@@ -21,7 +22,7 @@ namespace api.Services
         private readonly IUserRepository _userRepository;
         private readonly IConfiguration _configuration;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly PasswordHasher<User> passwordHasher = new();
+        private readonly PasswordHasher<User> _passwordHasher = new();
 
 
         public UserService(IUserRepository userRepository, 
@@ -77,7 +78,7 @@ namespace api.Services
             {
                 username = userInput.username,
                 normalized_username = userInput.username.ToUpper(),
-                password = passwordHasher.HashPassword(user, userInput.password)
+                password = _passwordHasher.HashPassword(user, userInput.password)
             };
 
             user = await _userRepository.InsertUserAsync(user);
@@ -91,21 +92,21 @@ namespace api.Services
         public async Task<string> AuthenticateUserAsync(UserInputModel userInput)
         {
             string normalizedUsernameInput = userInput.username.ToUpper();
-            User userExists = await _userRepository.SelectUserByNameAsync(normalizedUsernameInput);
-            if(userExists is null)
+            User userToAuth = await _userRepository.SelectUserByNameAsync(normalizedUsernameInput);
+            if(userToAuth is null)
             {
                 throw new DomainException(400, new string[]{"Credentials invalid"});
             }
 
-            PasswordVerificationResult samePassword = passwordHasher.VerifyHashedPassword(userExists, 
-                userExists.password, userInput.password);
+            PasswordVerificationResult samePassword = _passwordHasher.VerifyHashedPassword(userToAuth, 
+                userToAuth.password, userInput.password);
             
             if(((int) samePassword) is not 1)
             {
                 throw new DomainException(400, new string[]{"Credentials invalid"});
             }
 
-            return JSONWebTokenManager.CreateJWT(userExists, _configuration);
+            return JSONWebTokenManager.CreateJWT(userToAuth, _configuration);
         }
 
     #nullable enable
@@ -136,7 +137,7 @@ namespace api.Services
 
                 if(IsValidInput<string>(validator, password) is true)
                 {
-                    userUpdate.password = passwordHasher.HashPassword(userUpdate, password);
+                    userUpdate.password = _passwordHasher.HashPassword(userUpdate, password);
                 }
             }
             
@@ -149,13 +150,13 @@ namespace api.Services
 
         private bool IsValidInput<T>(AbstractValidator<T> validator, T input)
         {
-            var result = validator.Validate(input);
+            ValidationResult result = validator.Validate(input);
 
             if(result.IsValid is false)
             {
                 List<string> errors = new();
 
-                foreach (var item in result.Errors)
+                foreach (ValidationFailure item in result.Errors)
                 {
                     errors.Add(item.ErrorMessage);
                 }
@@ -170,19 +171,19 @@ namespace api.Services
         {
             int currentUserId = Int32.Parse(_httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
-            User toRemove = await _userRepository.SelectUserByIdAsync(currentUserId);
+            User userRemove = await _userRepository.SelectUserByIdAsync(currentUserId);
 
-            if(toRemove is null)
+            if(userRemove is null)
             {
                 throw new DomainException(400, new string[]{"ID not accepted. Try again"});
             }
 
-            _ = _userRepository.DeleteUserAsync(toRemove);
+            _ = _userRepository.DeleteUserAsync(userRemove);
 
             return new UserViewModel()
             {
-                UserId = toRemove.UserId,
-                username = toRemove.username
+                UserId = userRemove.UserId,
+                username = userRemove.username
             };
         
         }

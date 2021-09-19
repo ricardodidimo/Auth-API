@@ -13,7 +13,7 @@ namespace api.Helpers
         public static string CreateJWT(User userLogged, IConfiguration configuration)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(configuration["JWTKey"]);
+            byte[] key = Encoding.ASCII.GetBytes(configuration["JWTKey"]);
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new Claim[]

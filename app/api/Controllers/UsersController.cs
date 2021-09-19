@@ -59,14 +59,17 @@ namespace api.Controllers
             return Ok(new APIResponse<string>()
             {
                 StatusCode = 201,
-                Message = "Success, deliverying the authentication token created after identity confirmation",
+                Message = 
+                "Success, deliverying the authentication token created after identity confirmation",
                 Data = await _userService.AuthenticateUserAsync(userInput)
             });
         }
 
         [HttpPut]
         [Authorize]
-        public async Task<ActionResult> PutUserAsync(string newUsername = null, string newPassword = null)
+        public async Task<ActionResult> PutUserAsync(
+            string newUsername = null, 
+            string newPassword = null)
         {
             return Ok(new APIResponse<UserViewModel>()
             {

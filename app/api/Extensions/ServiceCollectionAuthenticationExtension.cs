@@ -10,7 +10,7 @@ namespace api.Extensions
     {
         public static IServiceCollection AddAuthenticationConfig(this IServiceCollection services, IConfiguration configuration)
         {
-            byte[] Key = Encoding.ASCII.GetBytes(configuration["JWTKey"]);
+            byte[] key = Encoding.ASCII.GetBytes(configuration["JWTKey"]);
 
             services.AddAuthentication(config => {
             config.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -21,7 +21,7 @@ namespace api.Extensions
                 config.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Key),
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
                     ValidateAudience = false, 
                     ValidateIssuer = false
                         

@@ -43,11 +43,13 @@ namespace api.Middlewares
                 }
 
                 context.Response.StatusCode = 500;
-                await context.Response.WriteAsJsonAsync(new APIResponse<string[]>(){
-                    StatusCode = 500,
-                    Message = "Unexpected error. Contact us.",
-                    Data = new string[]{ex.Message}
-                });
+                await context.Response.WriteAsJsonAsync(new APIResponse<string[]>()
+                    {
+                        StatusCode = 500,
+                        Message = "Unexpected error. Contact us.",
+                        Data = new string[]{ex.Message}
+                    }
+                );
                 
             }
     }
