@@ -12,7 +12,7 @@ namespace tests.Mocks
         {
             new User(){ UserId = 1, username = "Soraya", normalized_username = "SORAYA"},
             new User(){ UserId = 2, username = "Allex", normalized_username = "ALLEX"},
-            new User(){ UserId = 3, username = "shawn", normalized_username = "SHAWN"},
+            new User(){ UserId = 3, username = "shawn", normalized_username = "SHAWN", password = "123shawn@"},
             new User(){ UserId = 4, username = "louis", normalized_username = "LOUIS"}
         };
         public User DeleteUser(User toDelete)

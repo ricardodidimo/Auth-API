@@ -17,10 +17,11 @@ namespace tests
         private Mock<IHttpContextAccessor> httpContext = new Mock<IHttpContextAccessor>();
         private IConfiguration configuration = new ConfigurationBuilder()
             // Path for folder containing variables
-            .SetBasePath()
+            .SetBasePath("")
             // File containing variables
-            .AddJsonFile()
+            .AddJsonFile("")
             .Build();
+
 
         [Fact]
         public void GetUsers_WhenCalled_ReturnsExpectedListOfUserViewModel()
@@ -36,6 +37,7 @@ namespace tests
             Assert.Equal("Soraya", result.First().username);
         }
 
+
         [Fact]
         public void GetActualUser_WhenCalledWithValidParameters_ReturnsExpectedUserViewModel()
         {
@@ -50,6 +52,7 @@ namespace tests
             Assert.Equal(1, result.UserId);
             Assert.Equal("Soraya", result.username);
         }
+
 
         [Fact]
         public void GetActualUser_WhenCalledWithInvalidId_ThrowsException()
@@ -71,6 +74,7 @@ namespace tests
             throw new Xunit.Sdk.XunitException("GetActualUser_WhenCalledWithInvalidId_ThrowsException -> Test failed");
         }
     
+
         [Theory]
         [InlineData("Lola")]
         [InlineData("Ander")]
@@ -93,6 +97,7 @@ namespace tests
             Assert.Equal(username, result.username);
             
         }
+
 
         [Theory]
         [InlineData("Soraya")]
@@ -122,6 +127,7 @@ namespace tests
             throw new Xunit.Sdk.XunitException("AddUser_WhenCalledWithAlreadyInUseUsername_ThrowsException -> Test failed");
 
         }
+
 
         [Theory]
         [InlineData("soraya")]
@@ -153,6 +159,7 @@ namespace tests
 
         }
 
+
         [Fact]
         public void AuthenticateUser_WhenCalledWithValidParameters_ReturnsAuthenticationToken()
         {
@@ -171,6 +178,7 @@ namespace tests
             string expectedBeginningForJWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
             Assert.StartsWith(expectedBeginningForJWT, token);
         }
+
 
         [Fact]
         public void AuthenticateUser_WhenCalledWithInvalidUsername_ThrowsException()
@@ -200,6 +208,8 @@ namespace tests
             throw new Xunit.Sdk.XunitException("AuthenticateUser_WhenCalledWithInvalidUsername_ThrowsException -> Test failed");
 
         }
+
+
         [Fact]
         public void AuthenticateUser_WhenCalledWithInvalidPassword_ThrowsException()
         {
@@ -228,5 +238,160 @@ namespace tests
             throw new Xunit.Sdk.XunitException("AuthenticateUser_WhenCalledWithInvalidPassword_ThrowsException -> Test failed");
 
         }
+    
+
+        [Fact]
+        public void UpdateUser_WhenCalledWithValidValues_ReturnsUpdatedUser()
+        {
+            var userRepo = new UserRepositoryMock();
+            HttpContextAccessorMock httpContext = new(1);
+            var userService = new UserService(userRepo, configuration, httpContext);
+
+
+            var userUpdated = userService.UpdateUser("Sarah", "123p@ssword#");
+
+            Assert.Equal(1, userUpdated.UserId);
+            Assert.Equal("Sarah", userUpdated.username);
+            Assert.Equal("Sarah", userService.GetUsers().First().username);
+        }
+
+
+        [Fact]
+        public void UpdateUser_WhenCalledWithInvalidId_ThrowsException()
+        {
+            var userRepo = new UserRepositoryMock();
+            HttpContextAccessorMock httpContext = new(13);
+            var userService = new UserService(userRepo, configuration, httpContext);
+
+            try
+            {
+                var userUpdated = userService.UpdateUser("Sarah", "123p@ssword#");
+            }
+            catch(DomainException e)
+            {  
+                
+                Assert.Equal("ID not accepted. Repeat authentication", e.ErrorMessages.First());
+                return;
+            }
+            
+            throw new Xunit.Sdk.XunitException("UpdateUser_WhenCalledWithInvalidId_ThrowsException -> Test failed");
+        }
+    
+
+        [Fact]
+        public void UpdateUser_WhenCalledWithOnlyUsernameParameter_ReturnsUpdatedUsernameAndSamePassword()
+        {
+            var userRepo = new UserRepositoryMock();
+            HttpContextAccessorMock httpContext = new(3);
+            var userService = new UserService(userRepo, configuration, httpContext);
+
+            var userUpdated = userService.UpdateUser("Sarah", null);
+
+            Assert.Equal(3, userUpdated.UserId);
+            Assert.Equal("Sarah", userRepo.SelectUserById(3).username);
+            Assert.Equal("123shawn@", userRepo.SelectUserById(3).password);
+        }
+        
+
+        [Fact]
+        public void UpdateUser_WhenCalledWithOnlyPasswordParameter_ReturnsUpdatedPasswordAndSameUsername()
+        {
+            var userRepo = new UserRepositoryMock();
+            HttpContextAccessorMock httpContext = new(3);
+            var userService = new UserService(userRepo, configuration, httpContext);
+
+            var userUpdated = userService.UpdateUser(null, "123p@!@#word");
+
+            Assert.Equal(3, userUpdated.UserId);
+            Assert.Equal("shawn", userRepo.SelectUserById(3).username);
+            // Password has change
+            Assert.False("123shawn@".Equals(userRepo.SelectUserById(3).password));
+        }
+
+
+        [Fact]
+        public void UpdateUser_WhenCalledWithInvalidUsername_ThrowsException()
+        {
+            var userRepo = new UserRepositoryMock();
+            HttpContextAccessorMock httpContext = new(3);
+            var userService = new UserService(userRepo, configuration, httpContext);
+
+            try
+            {
+                // Breaking min. length validation rule
+                var userUpdated = userService.UpdateUser("a", null);
+            }
+            catch(DomainException e)
+            {  
+                Assert.Equal("username must have min. length of 2 and a max of 25 chars", e.ErrorMessages.First());
+                return;
+            }
+            
+            throw new Xunit.Sdk.XunitException("UpdateUser_WhenCalledWithInvalidUsername_ThrowsException -> Test failed");
+
+        }
+
+
+        [Fact]
+        public void UpdateUser_WhenCalledWithInvalidPassword_ThrowsException()
+        {
+            var userRepo = new UserRepositoryMock();
+            HttpContextAccessorMock httpContext = new(3);
+            var userService = new UserService(userRepo, configuration, httpContext);
+
+            try
+            {
+                // Breaking min. length validation rule
+                var userUpdated = userService.UpdateUser(null, "alph%2");
+            }
+            catch(DomainException e)
+            {  
+                Assert.Equal("password must have min. length of 8", e.ErrorMessages.First());
+                return;
+            }
+            
+            throw new Xunit.Sdk.XunitException("UpdateUser_WhenCalledWithInvalidPassword_ThrowsException -> Test failed");
+
+        }
+    
+    
+        [Fact]
+        public void RemoveUser_WhenCalledWithValidValues_ShortenedListAndReturnsExpectedOutput()
+        {
+            var userRepo = new UserRepositoryMock();
+            HttpContextAccessorMock httpContext = new(3);
+            var userService = new UserService(userRepo, configuration, httpContext);
+
+            var userDeleted = userService.RemoveUser();
+
+            Assert.Equal(3, userService.GetUsers().Count);
+            Assert.Null(userRepo.SelectUserById(3));
+
+            Assert.Equal(3, userDeleted.UserId);
+            Assert.Equal("shawn", userDeleted.username);
+            
+        }
+
+        [Fact]
+        public void RemoveUser_WhenCalledWithInvalidId_ThrowsException()
+        {
+            var userRepo = new UserRepositoryMock();
+            HttpContextAccessorMock httpContext = new(13);
+            var userService = new UserService(userRepo, configuration, httpContext);
+
+            try
+            {
+                var userUpdated = userService.RemoveUser();
+            }
+            catch(DomainException e)
+            {  
+                
+                Assert.Equal("ID not accepted. Try again", e.ErrorMessages.First());
+                return;
+            }
+            
+            throw new Xunit.Sdk.XunitException("RemoveUser_WhenCalledWithInvalidId_ThrowsException -> Test failed");
+        }
+
     }
 }
