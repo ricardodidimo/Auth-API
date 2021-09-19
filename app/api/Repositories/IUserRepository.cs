@@ -1,15 +1,16 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using api.Models.Entities;
 
 namespace api.Repositories
 {
     public interface IUserRepository
     {
-        List<User> SelectUsers();
-        User InsertUser(User userInput);
-        User SelectUserByName(string username);
-        User SelectUserById(int id);
-        User UpdateUser(User userInput);
-        User DeleteUser(User toDelete);
+        Task<List<User>> SelectUsersAsync();
+        Task<User> SelectUserByNameAsync(string username);
+        Task<User> SelectUserByIdAsync(int id);
+        Task<User> InsertUserAsync(User userInput);
+        Task<User> UpdateUserAsync(User userInput);
+        Task<User> DeleteUserAsync(User toDelete);
     }
 }

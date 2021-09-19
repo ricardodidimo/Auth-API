@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
+using System.Threading.Tasks;
 using api.Helpers;
 using api.Models.Entities;
 using api.Models.Inputs;
@@ -32,9 +33,9 @@ namespace api.Services
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public List<UserViewModel> GetUsers()
+        public async Task<List<UserViewModel>> GetUsersAsync()
         {
-            List<User> retrivedUsers = _userRepository.SelectUsers();
+            List<User> retrivedUsers = await _userRepository.SelectUsersAsync();
             List<UserViewModel> users = new();
 
             foreach (User user in retrivedUsers)
@@ -48,11 +49,11 @@ namespace api.Services
             return users;
         }
 
-        public UserViewModel GetActualUser()
+        public async Task<UserViewModel> GetActualUserAsync()
         {
             int currentUserId = Int32.Parse(_httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
-            User actual = _userRepository.SelectUserById(currentUserId);
+            User actual = await _userRepository.SelectUserByIdAsync(currentUserId);
             if(actual is null)
             {
                 throw new DomainException(404, new string[]{"ID not accepted. Try again"});
@@ -64,9 +65,9 @@ namespace api.Services
             };
         }
 
-        public UserViewModel AddUser(UserInputModel userInput)
+        public async Task<UserViewModel> AddUserAsync(UserInputModel userInput)
         {
-            User user = _userRepository.SelectUserByName(userInput.username.ToUpper());
+            User user = await _userRepository.SelectUserByNameAsync(userInput.username.ToUpper());
             if(user is not null)
             {
                 throw new DomainException(400, new string[]{"username not accepted. Try again"});
@@ -79,7 +80,7 @@ namespace api.Services
                 password = passwordHasher.HashPassword(user, userInput.password)
             };
 
-            user = _userRepository.InsertUser(user);
+            user = await _userRepository.InsertUserAsync(user);
 
             return new UserViewModel(){
                 UserId = user.UserId,
@@ -87,10 +88,10 @@ namespace api.Services
             };
         }
 
-        public string AuthenticateUser(UserInputModel userInput)
+        public async Task<string> AuthenticateUserAsync(UserInputModel userInput)
         {
             string normalizedUsernameInput = userInput.username.ToUpper();
-            User userExists = _userRepository.SelectUserByName(normalizedUsernameInput);
+            User userExists = await _userRepository.SelectUserByNameAsync(normalizedUsernameInput);
             if(userExists is null)
             {
                 throw new DomainException(400, new string[]{"Credentials invalid"});
@@ -108,11 +109,11 @@ namespace api.Services
         }
 
     #nullable enable
-        public UserViewModel UpdateUser(string? username, string? password)
+        public async Task<UserViewModel> UpdateUserAsync(string? username, string? password)
         {
             int currentUserId = Int32.Parse(_httpContextAccessor.HttpContext!.User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
             
-            User userUpdate = _userRepository.SelectUserById(currentUserId);
+            User userUpdate = await _userRepository.SelectUserByIdAsync(currentUserId);
             if(userUpdate is null)
             {
                 throw new DomainException(400, new string[]{"ID not accepted. Repeat authentication"});
@@ -139,7 +140,7 @@ namespace api.Services
                 }
             }
             
-            userUpdate = _userRepository.UpdateUser(userUpdate);
+            userUpdate = await _userRepository.UpdateUserAsync(userUpdate);
             return new UserViewModel(){
                 UserId = userUpdate.UserId,
                 username = userUpdate.username
@@ -165,18 +166,18 @@ namespace api.Services
         }
     #nullable disable
     
-        public UserViewModel RemoveUser()
+        public async Task<UserViewModel> RemoveUserAsync()
         {
             int currentUserId = Int32.Parse(_httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
-            User toRemove = _userRepository.SelectUserById(currentUserId);
+            User toRemove = await _userRepository.SelectUserByIdAsync(currentUserId);
 
             if(toRemove is null)
             {
                 throw new DomainException(400, new string[]{"ID not accepted. Try again"});
             }
 
-            _ = _userRepository.DeleteUser(toRemove);
+            _ = _userRepository.DeleteUserAsync(toRemove);
 
             return new UserViewModel()
             {

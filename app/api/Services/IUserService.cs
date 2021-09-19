@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using api.Models.Inputs;
 using api.Models.Views;
 
@@ -6,16 +7,16 @@ namespace api.Services
 {
     public interface IUserService
     {
-        List<UserViewModel> GetUsers();
-        UserViewModel GetActualUser();
-        UserViewModel AddUser(UserInputModel userInput);
-        string AuthenticateUser(UserInputModel userInput);
+        Task<List<UserViewModel>> GetUsersAsync();
+        Task<UserViewModel> GetActualUserAsync();
+        Task<UserViewModel> AddUserAsync(UserInputModel userInput);
+        Task<string> AuthenticateUserAsync(UserInputModel userInput);
 
         #nullable enable
-        UserViewModel UpdateUser(string? username, string? password);
+        Task<UserViewModel> UpdateUserAsync(string? username, string? password);
         #nullable disable
 
-        UserViewModel RemoveUser();
+        Task<UserViewModel> RemoveUserAsync();
        
     }
 }
