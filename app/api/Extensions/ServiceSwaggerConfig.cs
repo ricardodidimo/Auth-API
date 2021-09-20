@@ -1,4 +1,6 @@
 using System;
+using System.IO;
+using System.Reflection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
@@ -12,7 +14,22 @@ namespace api.Extensions
         {
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "artfulAPI", Version = "v1" });
+                c.SwaggerDoc("v1", new OpenApiInfo { 
+                    Title = "artfulAPI", 
+                    Version = "v1",
+                    Description= "Study of web api development in the ASP.NET platform",
+                    Contact = new OpenApiContact
+                    {
+                        Name = "Ricardo Didimo",
+                        Email = "RicardoDidimoDev@outlook.com",
+                        Url = new Uri("https://github.com/ricardodidimo"),
+                    }
+                });
+
+                // Setting XML comments
+                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                c.IncludeXmlComments(xmlPath);
 
                 var jwtSecurityScheme = new OpenApiSecurityScheme
                 {
