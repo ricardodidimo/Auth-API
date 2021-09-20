@@ -27,7 +27,7 @@ namespace api.Repositories
         public Task<User> SelectUserByNameAsync(string username)
         {
             return _context.users
-                .Where(u => u.normalized_username.Equals(username))
+                .Where(u => u.normalized_username.Equals(username.ToUpper()))
                 .FirstOrDefaultAsync();
         }
         

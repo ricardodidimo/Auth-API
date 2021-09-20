@@ -20,6 +20,10 @@ namespace api.Controllers
             _userService = userService;
         }
 
+        /// <summary> Get all registered users</summary>
+        /// <response code="200">A list of all users</response>
+        /// <response code="500">Unexpected server error</response>    
+        [Produces("application/json")]
         [HttpGet]
         public async Task<ActionResult> GetUsersAsync()
         {
@@ -31,6 +35,10 @@ namespace api.Controllers
             });
         }
 
+        /// <summary> Get your identity</summary>
+        /// <response code="200">Your identity; id and username</response>
+        /// <response code="500">Unexpected server error</response>  
+        [Produces("application/json")]
         [HttpGet("whoiam")]
         [Authorize]
         public async Task<ActionResult> GetActualUserAsync()
@@ -42,10 +50,16 @@ namespace api.Controllers
                 Data = await _userService.GetActualUserAsync()
             });
         }
+
+        /// <summary> Create a user</summary>
+        /// <response code="201">Newly created user; id and username</response>
+        /// <response code="400">Input validation error</response>
+        /// <response code="500">Unexpected server error</response>  
+        [Produces("application/json")]
         [HttpPost("Register")]
         public async Task<ActionResult> PostAUserAsync(UserInputModel userInput)
         {
-            return Ok(new APIResponse<UserViewModel>()
+            return Created(nameof(PostAUserAsync), new APIResponse<UserViewModel>()
             {
                 StatusCode = 201,
                 Message = "Success, returning newly added user",
@@ -53,10 +67,19 @@ namespace api.Controllers
             });
         }
 
+        /// <summary> Confirm your identity and generate the authentication token</summary>
+        /// <response code="201">Newly created token;</response>
+        /// <response code="400">Input validation error</response>
+        /// <response code="500">Unexpected server error</response>  
+        /// <remarks>After identity confirmation you must click in the 'Authorize' button in the top 
+        /// of the page and type the follow: "bearer {token}" replacing '{token}' by the response 
+        /// from here. All following requests will auto contain the token and you'll gain authorization 
+        /// to protected endpoints. </remarks>
+        [Produces("application/json")]
         [HttpPost("Login")]
         public async Task<ActionResult> AuthenticateUserAsync(UserInputModel userInput)
         {
-            return Ok(new APIResponse<string>()
+            return Created(nameof(AuthenticateUserAsync), new APIResponse<string>()
             {
                 StatusCode = 201,
                 Message = 
@@ -65,6 +88,13 @@ namespace api.Controllers
             });
         }
 
+        /// <summary> Update your username or password, or both</summary>
+        /// <response code="200">Newly updated user; id and username</response>
+        /// <response code="400">Input validation error</response>
+        /// <response code="500">Unexpected server error</response>
+        /// <remarks>You can pass both parameters or just one of them, which will partially 
+        /// update your user. </remarks>
+        [Produces("application/json")]
         [HttpPut]
         [Authorize]
         public async Task<ActionResult> PutUserAsync(
@@ -79,6 +109,11 @@ namespace api.Controllers
             });
         }
 
+        /// <summary> Delete your user</summary>
+        /// <response code="200">Newly deleted user; id and username</response>
+        /// <response code="400">Input validation error</response>
+        /// <response code="500">Unexpected server error</response>  
+        [Produces("application/json")]
         [HttpDelete]
         [Authorize]
         public async Task<ActionResult> DeleteUserAsync()
