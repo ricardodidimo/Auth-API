@@ -7,9 +7,10 @@
 <p>Locally</p>
 <ol>
   <li>git clone this repo</li>
-  <li>move to the api folder and 'dotnet restore' for dependencies checking</li>
+  <li>move to the api folder and execute the command: 'dotnet restore' for dependencies checking</li>
   <li>assign values to environment variables at the appsettings.json file</li>
-  <li>dotnet watch run to get the api up at 'localhost:5001'</li>
+  <li>execute command: 'dotnet watch run' to get the api up at 'localhost:5001'</li>
+  <li>If running the test project dont forget to type in the path and name of the file containing environment variables inside the test class </li>
 </ol>
 
 <h2>Technologies and methods used</h2>
