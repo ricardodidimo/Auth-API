@@ -126,6 +126,11 @@ namespace api.Services
                 
                 if(IsValidInput<string>(validator, username) is true)
                 {
+                    User alreadyInUse = await _userRepository.SelectUserByNameAsync(username);
+                    if(alreadyInUse is not null)
+                    {
+                        throw new DomainException(400, new string[]{"Username already in use"});
+                    }
                     userUpdate.username = username;
                     userUpdate.normalized_username = username.ToUpper();
                 }
@@ -178,7 +183,7 @@ namespace api.Services
                 throw new DomainException(400, new string[]{"ID not accepted. Try again"});
             }
 
-            _ = _userRepository.DeleteUserAsync(userRemove);
+            _ = await _userRepository.DeleteUserAsync(userRemove);
 
             return new UserViewModel()
             {
